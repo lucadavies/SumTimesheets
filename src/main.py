@@ -5,28 +5,32 @@ import openpyxl as op
 from datetime import datetime
 
 def main():
-    sheet = loadSheet()
 
-    timeCells = []
-    new = []
-    for r in range(6, 13):
-        new = []
-        for c in range(2, 10):
-            if sheet.cell(r, c).value != None:
-                new.append(sheet.cell(r, c).value)
-            else:
-                new.append(0)
-        timeCells.append(new)
-    
-    printCells(timeCells)
-    print()
-    countWorkedHours(timeCells)
-    print(sumHours(hours))
+    for e in os.scandir(getTimesheetDirPath()):
+        if e.is_file():
+            sheet = loadSheet(e.path)
+
+            timeCells = []
+            new = []
+            for r in range(6, 13):
+                new = []
+                for c in range(2, 10):
+                    if sheet.cell(r, c).value != None:
+                        new.append(sheet.cell(r, c).value)
+                    else:
+                        new.append(0)
+                timeCells.append(new)
+            
+            printCells(timeCells)
+            print()
+            countWorkedHours(timeCells)
+            print(sumHours(hours))
+            print()
     print()
 
-def loadSheet():
+def loadSheet(path):
     script_dir = os.path.dirname(__file__) 
-    rel_path = "sumtimesheets/Excel/Luca Davies Timesheet 01-02-25.xlsx"
+    rel_path = path
     abs_file_path = os.path.join(script_dir, rel_path)
     wb = op.load_workbook(abs_file_path)
     return wb.active
@@ -63,9 +67,13 @@ def countWorkedHours(cells):
                     hours[hr] += 1
         print()
 
+def getTimesheetDirPath():
+    script_dir = os.path.dirname(__file__) 
+    rel_path = "sumtimesheets/Excel/"
+    return os.path.join(script_dir, rel_path)
+
 def sumHours(hours):
     return sum([hours[hr] for hr in hours])
-
 
 def genIndToDayDict():
     d = {

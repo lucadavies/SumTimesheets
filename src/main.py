@@ -109,5 +109,4 @@ def genHourDict():
 indToDay = genIndToDayDict()
 hours = genHourDict()
 
-for e in os.scandir()
 main()

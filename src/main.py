@@ -20,7 +20,7 @@ def main():
     
     printCells(timeCells)
     print()
-    getShifts(timeCells)
+    countWorkedHours(timeCells)
     print(sumHours(hours))
     print()
 
@@ -52,26 +52,15 @@ def printCells(cells):
             print(cells[y][x], end = ' ')
         print()
 
-def getShifts(cells):
+def countWorkedHours(cells):
     shifts = {}
     for day in range(7):
         print(f"{indToDay[day]}: ", end = ' ')
-        if (cells[day][0] != 0) and (cells[day][1] != 0):
-            print(f"{cells[day][1].hour - cells[day][0].hour}", end = ' ')
-            for hr in range(cells[day][0].hour, cells[day][1].hour):
-                hours[hr] += 1
-        if (cells[day][2] != 0) and (cells[day][3] != 0):
-            print(f"{cells[day][3].hour - cells[day][2].hour}", end = ' ')
-            for hr in range(cells[day][2].hour, cells[day][3].hour):
-                hours[hr] += 1
-        if (cells[day][4] != 0) and (cells[day][5] != 0):
-            print(f"{cells[day][5].hour - cells[day][4].hour}", end = ' ')
-            for hr in range(cells[day][4].hour, cells[day][5].hour):
-                hours[hr] += 1
-        if (cells[day][6] != 0) and (cells[day][7] != 0):
-            print(f"{cells[day][7].hour - cells[day][6].hour}", end = ' ')
-            for hr in range(cells[day][6].hour, cells[day][7].hour):
-                hours[hr] += 1
+        for shift in range(0, 6, 2):
+            if (cells[day][shift] != 0) and (cells[day][shift + 1] != 0):
+                print(f"{cells[day][shift + 1].hour - cells[day][shift].hour}", end = ' ')
+                for hr in range(cells[day][shift].hour, cells[day][shift + 1].hour):
+                    hours[hr] += 1
         print()
 
 def sumHours(hours):

@@ -1,40 +1,49 @@
 import os
-import pandas as pd
 import openpyxl as op
+import plotly as pt
 
-from datetime import datetime
+timesheetsLocation = "sumtimesheets/Excel/"
 
 def main():
 
-    for e in os.scandir(getTimesheetDirPath()):
-        if e.is_file():
-            sheet = loadSheet(e.path)
-
-            timeCells = []
-            new = []
-            for r in range(6, 13):
-                new = []
-                for c in range(2, 10):
-                    if sheet.cell(r, c).value != None:
-                        new.append(sheet.cell(r, c).value)
-                    else:
-                        new.append(0)
-                timeCells.append(new)
+    # Iterate over all files in directory specified
+    for file in os.scandir(getTimesheetDirPath()):
+        if file.is_file():
+            sheet = loadSheet(file.path)
+            timeCells = getTimeCells(sheet)
             
+            print(file.name)
             printCells(timeCells)
             print()
             countWorkedHours(timeCells)
-            print(sumHours(hours))
-            print()
     print()
 
+""" Load specific sheet from workbook at provided path. """
 def loadSheet(path):
     script_dir = os.path.dirname(__file__) 
     rel_path = path
     abs_file_path = os.path.join(script_dir, rel_path)
     wb = op.load_workbook(abs_file_path)
     return wb.active
-    
+
+""" Reads relevant cells from provided sheet and returns them in a 2D array. """
+def getTimeCells(sheet):
+    timeCells = [] # Directly holds cells containing times from timesheet
+
+    # Rows 6 thru 12
+    for r in range(6, 13):
+        new = [] # Holding var for latest row of cells read in
+
+        # Columns B thru I
+        for c in range(2, 10):
+            if sheet.cell(r, c).value != None:
+                new.append(sheet.cell(r, c).value)
+            else:
+                new.append(0) # Read empty cells as zeros
+        timeCells.append(new)
+
+    return timeCells
+
 def printCells(cells):
     for y in range(len(cells)):
         match y:
@@ -56,24 +65,25 @@ def printCells(cells):
             print(cells[y][x], end = ' ')
         print()
 
+""" Takes 2D array containing cells read from timesheet and maps each hour worked to the hours dictionary 12am thru 11pm"""
 def countWorkedHours(cells):
-    shifts = {}
     for day in range(7):
-        print(f"{indToDay[day]}: ", end = ' ')
+
+        # For each shift start/end time pair...
         for shift in range(0, 6, 2):
+
+            # Check shift has both a start AND end time
             if (cells[day][shift] != 0) and (cells[day][shift + 1] != 0):
-                print(f"{cells[day][shift + 1].hour - cells[day][shift].hour}", end = ' ')
+
+                # For each hour spanned by the shift, add one to relevant hour
                 for hr in range(cells[day][shift].hour, cells[day][shift + 1].hour):
                     hours[hr] += 1
-        print()
 
+""" Returns the absolute path to the timesheets to process. """
 def getTimesheetDirPath():
     script_dir = os.path.dirname(__file__) 
-    rel_path = "sumtimesheets/Excel/"
+    rel_path = timesheetsLocation
     return os.path.join(script_dir, rel_path)
-
-def sumHours(hours):
-    return sum([hours[hr] for hr in hours])
 
 def genIndToDayDict():
     d = {
@@ -86,16 +96,6 @@ def genIndToDayDict():
         6 : "Sat"
     }
     return d
-
-def genHourTimeDict():
-    h = {}
-    for i in range(24):
-        if (i < 10):
-            key = "{}:00:00".format("0" + str(i))
-        else:
-            key = "{}:00:00".format(i)
-        h[key] = 0
-    return h
 
 def genHourDict():
     h = {}

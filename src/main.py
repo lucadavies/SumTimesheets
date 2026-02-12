@@ -27,7 +27,7 @@ def main():
 """ Load specific sheet from workbook at provided path. """
 def loadSheet(path):
     script_dir = os.path.dirname(__file__) 
-    rel_path = path
+    rel_path = path 
     abs_file_path = os.path.join(script_dir, rel_path)
     wb = op.load_workbook(abs_file_path)
     return wb.active
@@ -101,10 +101,13 @@ def countWorkedHours(cells):
                 if endTime == 0:
                     endTime = 24
 
-                # TODO DOESN'T ACCOUNT FOR HALF HOURS IN HOUR COUNT
                 # For each hour spanned by the shift, add one to relevant hour
                 for hr in range(math.trunc(startTime), math.trunc(endTime)):
                     hours[hr] += 1
+                    if startTime % 1 > 0:
+                        hours[hr] += 0.5
+                    if endTime % 1 > 0:
+                        hours[hr] -= 0.5
 
                 if debugHourCount:
                     print(f"{endTime - startTime}", end = ' ')

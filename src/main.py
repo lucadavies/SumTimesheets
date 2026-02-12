@@ -1,10 +1,11 @@
 import os
+import math
 import openpyxl as op
 import plotly as pt
 
 timesheetsLocation = "sumtimesheets/Excel/"
 debugCellRead = False
-debugHourCount = False
+debugHourCount = True
 
 def main():
 
@@ -87,11 +88,26 @@ def countWorkedHours(cells):
 
             # Check shift has both a start AND end time
             if (cells[day][shift] != 0) and (cells[day][shift + 1] != 0):
-                if debugHourCount:
-                    print(f"{cells[day][shift + 1].hour - cells[day][shift].hour}", end = ' ')
+
+                startTime = cells[day][shift].hour
+                endTime = cells[day][shift + 1].hour
+
+                if cells[day][shift].minute == 30:
+                    startTime += 0.5
+                if cells[day][shift + 1].minute == 30:
+                    endTime += 0.5
+
+                # Account for a shift finishing at midnight (00:00)
+                if endTime == 0:
+                    endTime = 24
+
+                # TODO DOESN'T ACCOUNT FOR HALF HOURS IN HOUR COUNT
                 # For each hour spanned by the shift, add one to relevant hour
-                for hr in range(cells[day][shift].hour, cells[day][shift + 1].hour):
+                for hr in range(math.trunc(startTime), math.trunc(endTime)):
                     hours[hr] += 1
+
+                if debugHourCount:
+                    print(f"{endTime - startTime}", end = ' ')
         
         
         if cells[day][8] != 0:

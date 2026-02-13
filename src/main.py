@@ -5,23 +5,31 @@ import plotly as pt
 
 timesheetsLocation = "sumtimesheets/Excel/"
 debugCellRead = False
-debugHourCount = True
+debugHourCount = False
+ActualHrs = 6785.3
 
 def main():
+
+    fileCount = 0
 
     # Iterate over all files in directory specified
     for file in os.scandir(getTimesheetDirPath()):
         if file.is_file():
             if debugCellRead or debugHourCount:
+                print(f"[{fileCount}] | ", end = " ")
                 print(file.name)
+            fileCount += 1
             sheet = loadSheet(file.path)
-            timeCells = getTimeCells(sheet)
+            timeCells, readSheetTotal = getTimeCells(sheet)
+            
             
             if debugCellRead:
                 printCells(timeCells)
                 print()
-            countWorkedHours(timeCells)
-    print(f"Total hours: {sumHours(hours)}")
+            countWorkedHours(timeCells, readSheetTotal)
+    print()
+    countedHours = sumHours(hours)
+    print(f"Total counted hours: {countedHours} | Actual: {ActualHrs} (Error: {round(countedHours - ActualHrs, 1)} | {round((countedHours - ActualHrs) / ActualHrs, 1) * 100}% error)")
     print()
 
 """ Load specific sheet from workbook at provided path. """
@@ -29,7 +37,7 @@ def loadSheet(path):
     script_dir = os.path.dirname(__file__) 
     rel_path = path 
     abs_file_path = os.path.join(script_dir, rel_path)
-    wb = op.load_workbook(abs_file_path)
+    wb = op.load_workbook(abs_file_path, data_only=True)
     return wb.active
 
 """ Reads relevant cells from provided sheet and returns them in a 2D array. """
@@ -54,7 +62,7 @@ def getTimeCells(sheet):
             new.append(0)
         timeCells.append(new)
 
-    return timeCells
+    return timeCells, round(sheet.cell(14, 7).value, 1)
 
 def printCells(cells):
     for y in range(len(cells)):
@@ -78,7 +86,9 @@ def printCells(cells):
         print()
 
 """ Takes 2D array containing cells read from timesheet and maps each hour worked to the hours dictionary 12am thru 11pm"""
-def countWorkedHours(cells):
+def countWorkedHours(cells, readSheetTotal):
+    timesheetHours = 0
+
     for day in range(7):
         if debugHourCount:
             print(f"{indToDay[day]}: ", end = ' ')
@@ -89,52 +99,67 @@ def countWorkedHours(cells):
             # Check shift has both a start AND end time
             if (cells[day][shift] != 0) and (cells[day][shift + 1] != 0):
 
-                startTime = cells[day][shift].hour
-                endTime = cells[day][shift + 1].hour
-
-                if cells[day][shift].minute == 30:
-                    startTime += 0.5
-                if cells[day][shift + 1].minute == 30:
-                    endTime += 0.5
+                startTime = cells[day][shift].hour + round(cells[day][shift].minute / 60, 2)
+                endTime = cells[day][shift + 1].hour + round(cells[day][shift + 1].minute / 60, 2)
 
                 # Account for a shift finishing at midnight (00:00)
-                if endTime == 0:
-                    endTime = 24
+                if math.trunc(endTime) == 0:
+                    endTime =+ 24
 
                 # For each hour spanned by the shift, add one to relevant hour
                 for hr in range(math.trunc(startTime), math.trunc(endTime)):
                     hours[hr] += 1
-                    if startTime % 1 > 0:
-                        hours[hr] += 0.5
-                    if endTime % 1 > 0:
-                        hours[hr] -= 0.5
+                    timesheetHours += 1
+
+                if startTime % 1 > 0:
+                    hours[hr] -= startTime % 1
+                    timesheetHours -= startTime % 1
+                if endTime % 1 > 0:
+                    hours[hr] += endTime % 1
+                    timesheetHours += endTime % 1
 
                 if debugHourCount:
                     print(f"{endTime - startTime}", end = ' ')
         
-        
+        # Count get-outs. Takes start time from end of evening/night shift, or else assumes 10pm
+        # If there's a get-out at all
         if cells[day][8] != 0:
             if cells[day][8].hour != 0:
 
+                startTime = 22
+
                 # If night shift exists...
                 if cells[day][7] != 0:
-                    for hr in range(cells[day][7].hour, cells[day][7].hour + cells[day][8].hour):
-                        hours[hr % 24] += 1
-                
+                    startTime = cells[day][7].hour + round(cells[day][7].minute / 60, 2)
+
                 # Else if evening shift exists...
                 elif cells[day][5] != 0:
-                    for hr in range(cells[day][5].hour, cells[day][5].hour + cells[day][8].hour):
-                        hours[hr % 24] += 1
+                    startTime = cells[day][5].hour + round(cells[day][5].minute / 60, 2)
+
                 # If No evening/night shift, assume get-out starts at 10pm
                 else:
-                    for hr in range(22, 22 + cells[day][8].hour):
-                        hours[hr % 24] += 1
+                    startTime = 22
+
+                endTime = startTime + cells[day][8].hour + round(cells[day][8].minute / 60, 2)
+
+                for hr in range(math.trunc(startTime), math.trunc(endTime)):
+                    hours[hr % 24] += 1
+                    timesheetHours += 1
+                if startTime % 1 > 0:
+                    hours[hr % 24] -= startTime % 1
+                    timesheetHours -= startTime % 1
+                if endTime % 1 > 0:
+                    hours[hr % 24] += endTime % 1
+                    timesheetHours += endTime % 1
 
                 if debugHourCount:
-                        print(f"GO: {cells[day][8].hour}", end = ' ')
+                        print(f"GO: {cells[day][8].hour + round(cells[day][8].minute / 60, 2)}", end = ' ')
 
         if debugHourCount:
             print()
+
+    if debugHourCount:
+        print(f"Counted: {timesheetHours} | Actual: {readSheetTotal}")
 
 """ Sum and return total hours counted. """
 def sumHours(hours):

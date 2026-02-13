@@ -1,12 +1,12 @@
 import os
 import math
 import openpyxl as op
-import plotly as pt
+import plotly.graph_objects as go
 
 timesheetsLocation = "sumtimesheets/Excel/"
 debugCellRead = False
 debugHourCount = False
-ActualHrs = 6785.3
+ActualHrs = 6785.3 - 716.75 # Total hours less holiday entitlement
 
 def main():
 
@@ -22,15 +22,16 @@ def main():
             sheet = loadSheet(file.path)
             timeCells, readSheetTotal = getTimeCells(sheet)
             
-            
             if debugCellRead:
                 printCells(timeCells)
                 print()
             countWorkedHours(timeCells, readSheetTotal)
-    print()
     countedHours = sumHours(hours)
-    print(f"Total counted hours: {countedHours} | Actual: {ActualHrs} (Error: {round(countedHours - ActualHrs, 1)} | {round((countedHours - ActualHrs) / ActualHrs, 1) * 100}% error)")
-    print()
+    if debugHourCount:
+        print(f"Total counted hours: {countedHours} | Actual: {ActualHrs} (Error: {round(countedHours - ActualHrs, 1)} | {round((countedHours - ActualHrs) / ActualHrs, 1) * 100}% error)")
+        print()
+    
+    showFigure(hours)
 
 """ Load specific sheet from workbook at provided path. """
 def loadSheet(path):
@@ -164,6 +165,16 @@ def countWorkedHours(cells, readSheetTotal):
 """ Sum and return total hours counted. """
 def sumHours(hours):
     return sum([hours[hr] for hr in hours])
+
+def showFigure(hours):
+    vals = list(hours.values())
+    keys = [str(k).rjust(2, "0") + ":00" for k in hours.keys()]
+
+    fig = go.Figure(
+        data=[go.Bar(y=vals, x=keys)],
+        layout_title_text = "Hours worked"
+    )
+    fig.show()
 
 """ Returns the absolute path to the timesheets to process. """
 def getTimesheetDirPath():

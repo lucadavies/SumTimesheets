@@ -31,7 +31,7 @@ def main():
         print(f"Total counted hours: {countedHours} | Actual: {ActualHrs} (Error: {round(countedHours - ActualHrs, 1)} | {round((countedHours - ActualHrs) / ActualHrs, 1) * 100}% error)")
         print()
     
-    showFigure(hours)
+    showFigure(hours, fileCount)
 
 """ Load specific sheet from workbook at provided path. """
 def loadSheet(path):
@@ -166,14 +166,17 @@ def countWorkedHours(cells, readSheetTotal):
 def sumHours(hours):
     return sum([hours[hr] for hr in hours])
 
-def showFigure(hours):
+def showFigure(hours, weekCount):
     vals = list(hours.values())
     keys = [str(k).rjust(2, "0") + ":00" for k in hours.keys()]
 
     fig = go.Figure(
         data=[go.Bar(y=vals, x=keys)],
-        layout_title_text = "Hours worked"
+        layout_title_text = f"Hours worked and when (over {weekCount} weeks)"
     )
+
+    fig.update_xaxes(title_text = "Start time")
+    fig.update_yaxes(title_text = "Count")
     fig.show()
 
 """ Returns the absolute path to the timesheets to process. """

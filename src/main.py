@@ -2,14 +2,18 @@ import os
 import math
 import openpyxl as op
 import plotly.graph_objects as go
+import plotly.subplots as sp
 
 timesheetsLocation = "sumtimesheets/Excel/"
 debugCellRead = False
 debugHourCount = False
+showByDay = True
 ActualHrs = 6785.3 - 716.75 # Total hours less holiday entitlement
 
 def main():
 
+    hours = genHourDict()
+    hoursByDay = genHoursByDayDicts()
     fileCount = 0
 
     # Iterate over all files in directory specified
@@ -25,13 +29,13 @@ def main():
             if debugCellRead:
                 printCells(timeCells)
                 print()
-            countWorkedHours(timeCells, readSheetTotal)
+            countWorkedHours(hours, hoursByDay, timeCells, readSheetTotal)
     countedHours = sumHours(hours)
     if debugHourCount:
         print(f"Total counted hours: {countedHours} | Actual: {ActualHrs} (Error: {round(countedHours - ActualHrs, 1)} | {round((countedHours - ActualHrs) / ActualHrs, 1) * 100}% error)")
         print()
     
-    showFigure(hours, fileCount)
+    showFigure(hours, hoursByDay, fileCount)
 
 """ Load specific sheet from workbook at provided path. """
 def loadSheet(path):
@@ -87,7 +91,7 @@ def printCells(cells):
         print()
 
 """ Takes 2D array containing cells read from timesheet and maps each hour worked to the hours dictionary 12am thru 11pm"""
-def countWorkedHours(cells, readSheetTotal):
+def countWorkedHours(hours, hoursByDay, cells, readSheetTotal):
     timesheetHours = 0
 
     for day in range(7):
@@ -110,13 +114,16 @@ def countWorkedHours(cells, readSheetTotal):
                 # For each hour spanned by the shift, add one to relevant hour
                 for hr in range(math.trunc(startTime), math.trunc(endTime)):
                     hours[hr] += 1
+                    hoursByDay[indToDay[day]][hr] += 1
                     timesheetHours += 1
 
                 if startTime % 1 > 0:
                     hours[hr] -= startTime % 1
+                    hoursByDay[indToDay[day]][hr] -= startTime % 1
                     timesheetHours -= startTime % 1
                 if endTime % 1 > 0:
                     hours[hr] += endTime % 1
+                    hoursByDay[indToDay[day]][hr] += endTime % 1
                     timesheetHours += endTime % 1
 
                 if debugHourCount:
@@ -145,12 +152,15 @@ def countWorkedHours(cells, readSheetTotal):
 
                 for hr in range(math.trunc(startTime), math.trunc(endTime)):
                     hours[hr % 24] += 1
+                    hoursByDay[indToDay[day]][hr % 24] += 1
                     timesheetHours += 1
                 if startTime % 1 > 0:
                     hours[hr % 24] -= startTime % 1
+                    hoursByDay[indToDay[day]][hr % 24] -= startTime % 1
                     timesheetHours -= startTime % 1
                 if endTime % 1 > 0:
                     hours[hr % 24] += endTime % 1
+                    hoursByDay[indToDay[day]][hr % 24] += endTime % 1
                     timesheetHours += endTime % 1
 
                 if debugHourCount:
@@ -166,18 +176,56 @@ def countWorkedHours(cells, readSheetTotal):
 def sumHours(hours):
     return sum([hours[hr] for hr in hours])
 
-def showFigure(hours, weekCount):
-    vals = list(hours.values())
-    keys = [str(k).rjust(2, "0") + ":00" for k in hours.keys()]
+def showFigure(hours, hoursByDay, weekCount):
 
-    fig = go.Figure(
-        data=[go.Bar(y=vals, x=keys)],
-        layout_title_text = f"Hours worked and when (over {weekCount} weeks)"
-    )
+    if not showByDay:
+        vals = list(hours.values())
+        keys = [str(k).rjust(2, "0") + ":00" for k in hours.keys()]
 
-    fig.update_xaxes(title_text = "Start time")
-    fig.update_yaxes(title_text = "Count")
-    fig.show()
+        fig = go.Figure(
+            data=[go.Bar(y=vals, x=keys)],
+            layout_title_text = f"Hours worked and when (over {weekCount} weeks)"
+        )
+
+        fig.update_xaxes(title_text = "Start time")
+        fig.update_yaxes(title_text = "Count")
+        fig.show()
+    else:
+
+        fig = sp.make_subplots( 
+            rows = 2,
+            cols = 4,
+            subplot_titles=(list(hoursByDay.keys()) + ["All"])
+        )
+
+        r = 1
+        c = 1
+        for day in hoursByDay:
+            vals = list(hoursByDay[day].values())
+            keys = [str(k).rjust(2, "0") + ":00" for k in hoursByDay[day].keys()]
+
+            fig.add_trace(
+                go.Bar(y=vals, x=keys, name=day),
+                row= r,
+                col= c,
+            )
+            if c == 4:
+                r += 1
+                c = 0
+            c += 1
+        
+        vals = list(hours.values())
+        keys = [str(k).rjust(2, "0") + ":00" for k in hours.keys()]
+
+        fig.add_trace(
+                go.Bar(y=vals, x=keys, name="All"),
+                row= 2,
+                col= 4
+            )
+        
+        fig.update_yaxes(range=[0, 130])
+        fig.update_yaxes(range=[0, 700], row=2, col=4)
+        fig.show()
 
 """ Returns the absolute path to the timesheets to process. """
 def getTimesheetDirPath():
@@ -203,7 +251,13 @@ def genHourDict():
         h[i] = 0
     return h
 
+def genHoursByDayDicts():
+    d = {}
+    for day in indToDay:
+        d[indToDay[day]] = genHourDict()
+    return d
+
+
 indToDay = genIndToDayDict()
-hours = genHourDict()
 
 main()

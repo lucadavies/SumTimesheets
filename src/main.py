@@ -69,27 +69,6 @@ def getTimeCells(sheet):
 
     return timeCells, round(sheet.cell(14, 7).value, 1)
 
-def printCells(cells):
-    for y in range(len(cells)):
-        match y:
-            case 0:
-                print("Sun:", end = ' ')
-            case 1:
-                print("Mon:", end = ' ')
-            case 2:
-                print("Tue:", end = ' ')
-            case 3:
-                print ("Wed:", end = ' ')
-            case 4:
-                print ("Thu:", end = ' ')
-            case 5:
-                print ("Fri:", end = ' ')
-            case 6:
-                print ("Sat:", end = ' ')
-        for x in range(len(cells[0])):
-            print(cells[y][x], end = ' ')
-        print()
-
 """ Takes 2D array containing cells read from timesheet and maps each hour worked to the hours dictionary 12am thru 11pm"""
 def countWorkedHours(hours, hoursByDay, cells, readSheetTotal):
     timesheetHours = 0
@@ -226,6 +205,27 @@ def showFigure(hours, hoursByDay, weekCount):
         fig.update_yaxes(range=[0, 130])
         fig.update_yaxes(range=[0, 700], row=2, col=4)
         fig.show()
+
+def printCells(cells):
+    for y in range(len(cells)):
+        match y:
+            case 0:
+                print("Sun:", end = ' ')
+            case 1:
+                print("Mon:", end = ' ')
+            case 2:
+                print("Tue:", end = ' ')
+            case 3:
+                print ("Wed:", end = ' ')
+            case 4:
+                print ("Thu:", end = ' ')
+            case 5:
+                print ("Fri:", end = ' ')
+            case 6:
+                print ("Sat:", end = ' ')
+        for x in range(len(cells[0])):
+            print(cells[y][x], end = ' ')
+        print()
 
 """ Returns the absolute path to the timesheets to process. """
 def getTimesheetDirPath():

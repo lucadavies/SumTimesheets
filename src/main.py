@@ -98,14 +98,14 @@ def countWorkedHours(hours, hoursByDay, cells, readSheetTotal):
 
                 # If start time was not on-the-hour, subtract part-hour from total time
                 if startTime % 1 > 0:
-                    hours[hr] -= startTime % 1
-                    hoursByDay[indToDay[day]][hr] -= startTime % 1
+                    hours[math.trunc(startTime)] -= startTime % 1
+                    hoursByDay[indToDay[day]][math.trunc(startTime)] -= startTime % 1
                     timesheetHours -= startTime % 1
                 
                 # If end time was not on-the-hour, add part-hour to total time
                 if endTime % 1 > 0:
-                    hours[hr] += endTime % 1
-                    hoursByDay[indToDay[day]][hr] += endTime % 1
+                    hours[math.trunc(endTime)] += endTime % 1
+                    hoursByDay[indToDay[day]][math.trunc(endTime)] += endTime % 1
                     timesheetHours += endTime % 1
 
                 if debugHourCount:
@@ -140,14 +140,14 @@ def countWorkedHours(hours, hoursByDay, cells, readSheetTotal):
 
                 # If start time was not on-the-hour, subtract part-hour from total time (roll over hour to next day as needed)
                 if startTime % 1 > 0:
-                    hours[hr % 24] -= startTime % 1
-                    hoursByDay[indToDay[(day + (hr // 24)) % 7]][hr % 24] -= startTime % 1
+                    hours[math.trunc(startTime) % 24] -= startTime % 1
+                    hoursByDay[indToDay[(day + (math.trunc(startTime) // 24)) % 7]][math.trunc(startTime) % 24] -= startTime % 1
                     timesheetHours -= startTime % 1
 
                 # If end time was not on-the-hour, add part-hour to total time (roll over hour to next day as needed)
                 if endTime % 1 > 0:
-                    hours[hr % 24] += endTime % 1
-                    hoursByDay[indToDay[(day + (hr // 24)) % 7]][hr % 24] += endTime % 1
+                    hours[math.trunc(endTime) % 24] += endTime % 1
+                    hoursByDay[indToDay[(day + (math.trunc(endTime) // 24)) % 7]][math.trunc(endTime) % 24] += endTime % 1
                     timesheetHours += endTime % 1
 
                 if debugHourCount:

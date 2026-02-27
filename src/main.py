@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import plotly.subplots as sp
 
 timesheetsLocation = "sumtimesheets/Excel/"
-debugCellRead = False
+debugCellRead = True
 debugHourCount = False
 showByDay = True
 ActualHrs = 6785.3 - 716.75 # Total hours less holiday entitlement
@@ -88,7 +88,7 @@ def countWorkedHours(hours, hoursByDay, cells, readSheetTotal):
 
                 # Account for a shift finishing at midnight (00:00)
                 if math.trunc(endTime) == 0:
-                    endTime =+ 24
+                    endTime += 24
 
                 # For each hour spanned by the shift, add one to relevant hour
                 for hr in range(math.trunc(startTime), math.trunc(endTime)):

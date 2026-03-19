@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 import plotly.subplots as sp
 
 timesheetsLocation = "sumtimesheets/Excel/"
-debugCellRead = True
+debugCellRead = False
 debugHourCount = False
 showByDay = True
 ActualHrs = 6785.3 - 716.75 # Total hours less holiday entitlement
